@@ -18,3 +18,11 @@ pub struct PrepList {
     pub recipe_checklist: Vec<RecipeCheck>,
     pub user_id: ObjectId,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PrepListRequest {
+    #[serde(with="mongodb::bson::serde_helpers::bson_datetime_as_rfc3339_string")]
+    pub date: DateTime,
+    pub recipe_checklist: Vec<RecipeCheck>,
+    pub user_id: ObjectId,
+}
