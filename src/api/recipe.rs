@@ -3,22 +3,22 @@ use rocket::{serde::json::Json, State};
 
 use crate::{
     db::mongodb::MongoDB,
-    model::prep_list::{PrepList, PrepListRequest},
+    model::recipe::{Recipe, RecipeRequest},
 };
 
 use super::response::APIResponse;
 
 #[get("/")]
-pub async fn get_all_prep_list(_db: &State<MongoDB>) -> Json<Option<Vec<PrepList>>> {
-    Json(_db.get_all_prep_list())
+pub async fn get_all_recipes(_db: &State<MongoDB>) -> Json<Option<Vec<Recipe>>> {
+    Json(_db.get_all_recipes())
 }
 
 #[get("/<iid>")]
-pub async fn get_prep_list(iid: &str, _db: &State<MongoDB>) -> Json<APIResponse<Option<PrepList>>> {
+pub async fn get_recipe(iid: &str, _db: &State<MongoDB>) -> Json<APIResponse<Option<Recipe>>> {
     match ObjectId::parse_str(iid) {
         Ok(id) => Json(APIResponse {
             code: 200,
-            data: _db.get_prep_list(&id),
+            data: _db.get_recipe(&id),
             message: "".to_string(),
         }),
         Err(ex) => {
@@ -33,36 +33,36 @@ pub async fn get_prep_list(iid: &str, _db: &State<MongoDB>) -> Json<APIResponse<
 }
 
 #[post("/", format = "application/json", data = "<info>")]
-pub async fn create_prep_list(
-    info: Json<PrepListRequest>,
+pub async fn create_recipe(
+    info: Json<RecipeRequest>,
     _db: &State<MongoDB>,
 ) -> Json<APIResponse<Option<ObjectId>>> {
-    let prep_list = _db.create_prep_list(&info.0);
-    let message = if prep_list.is_some() {
-        "Prep List created."
+    let recipe = _db.create_recipe(&info.0);
+    let message = if recipe.is_some() {
+        "Recipe created."
     } else {
-        "Prep List was not created."
+        "Recipe was not created."
     }
     .to_string();
     let response = APIResponse {
         code: 200,
-        data: prep_list,
+        data: recipe,
         message,
     };
     Json(response)
 }
 
 #[put("/<iid>", format = "application/json", data = "<info>")]
-pub async fn update_prep_list(
+pub async fn update_recipe(
     iid: &str,
-    info: Json<PrepListRequest>,
+    info: Json<RecipeRequest>,
     _db: &State<MongoDB>,
 ) -> Json<APIResponse<bool>> {
     match ObjectId::parse_str(iid) {
         Ok(id) => {
-            let update = _db.update_prep_list(&id, &info.0);
+            let update = _db.update_recipe(&id, &info.0);
             let message = if update {
-                "Prep List updated."
+                "Recipe updated."
             } else {
                 "Error while updating."
             }
@@ -86,12 +86,12 @@ pub async fn update_prep_list(
 }
 
 #[delete("/<iid>")]
-pub async fn delete_prep_list(iid: &str, _db: &State<MongoDB>) -> Json<APIResponse<bool>> {
+pub async fn delete_recipe(iid: &str, _db: &State<MongoDB>) -> Json<APIResponse<bool>> {
     match ObjectId::parse_str(iid) {
         Ok(id) => {
-            let update = _db.delete_prep_list(&id);
+            let update = _db.delete_recipe(&id);
             let message = if update {
-                "Prep List deleted."
+                "Recipe deleted."
             } else {
                 "Error while deleting."
             }
