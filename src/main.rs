@@ -48,7 +48,7 @@ fn rocket() -> _ {
         .register("/", catchers![error_handler])
         .mount("/", routes![index, delay])
         .mount("/user", routes![get_users, login_user, register_user])
-        .mount("/product", routes![api::product::get_all_products])
+        .mount("/product", routes![api::product::get_all_products, api::product::get_product_by_id, api::product::create_product, api::product::update_product, api::product::delete_product_by_id])
 }
 
 fn generate_db() -> MongoDB {
