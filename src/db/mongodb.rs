@@ -17,9 +17,18 @@ impl MongoDB {
         )
         .expect("Cannot connect to database!");
         let db = client.database("test");
-        let col: Collection<Document> = db.collection("user");
         let mut collections: HashMap<String, Collection<Document>> = HashMap::new();
-        collections.insert(String::from("user"), col);
+
+        let user: Collection<Document> = db.collection("user");
+        let inventory: Collection<Document> = db.collection("inventory");
+        let prep_list: Collection<Document> = db.collection("prep_list");
+        let product: Collection<Document> = db.collection("product");
+        let recipe: Collection<Document> = db.collection("recipe");
+        collections.insert(String::from("user"), user);
+        collections.insert(String::from("inventory"), inventory);
+        collections.insert(String::from("prep_list"), prep_list);
+        collections.insert(String::from("product"), product);
+        collections.insert(String::from("recipe"), recipe);
 
         MongoDB { collections }
     }

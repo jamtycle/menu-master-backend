@@ -1,0 +1,12 @@
+version: "3.0"
+
+services:
+  menu-master-backend:
+    image: menu-master-backend:1.0
+    ports:
+      - "27041:27040"
+    build:
+      dockerfile: ./Dockerfile
+    container_name: menu-master-backend
+    restart: on-failure
+    
