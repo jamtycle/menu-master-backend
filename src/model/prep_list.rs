@@ -1,11 +1,9 @@
 use mongodb::bson::{oid::ObjectId, DateTime};
 use serde::{Serialize, Deserialize};
 
-use super::recipe::Recipe;
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RecipeCheck {
-    pub recipe: Recipe,
+    pub recipe: String,
     pub done: bool,
 }
 
