@@ -5,3 +5,5 @@ pub mod inventorydb;
 pub mod prep_listdb;
 pub mod recipedb;
 pub mod ingredientsdb;
+pub mod menudb;
+pub mod restaurantdb;

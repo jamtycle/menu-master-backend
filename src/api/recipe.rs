@@ -8,17 +8,27 @@ use crate::{
 
 use super::response::APIResponse;
 
+pub fn recipe_routes() -> Vec<rocket::Route> {
+    routes![
+        get_all_recipes,
+        get_recipe,
+        create_recipe,
+        update_recipe,
+        delete_recipe
+    ]
+}
+
 #[get("/")]
-pub async fn get_all_recipes(_db: &State<MongoDB>) -> Json<Option<Vec<Recipe>>> {
-    Json(_db.get_all_recipes())
+async fn get_all_recipes(db: &State<MongoDB>) -> Json<Option<Vec<Recipe>>> {
+    Json(db.get_all_recipes())
 }
 
 #[get("/<iid>")]
-pub async fn get_recipe(iid: &str, _db: &State<MongoDB>) -> Json<APIResponse<Option<Recipe>>> {
+async fn get_recipe(iid: &str, db: &State<MongoDB>) -> Json<APIResponse<Option<Recipe>>> {
     match ObjectId::parse_str(iid) {
         Ok(id) => Json(APIResponse {
             code: 200,
-            data: _db.get_recipe(&id),
+            data: db.get_recipe(&id),
             message: "".to_string(),
         }),
         Err(ex) => {
@@ -33,11 +43,11 @@ pub async fn get_recipe(iid: &str, _db: &State<MongoDB>) -> Json<APIResponse<Opt
 }
 
 #[post("/", format = "application/json", data = "<info>")]
-pub async fn create_recipe(
+async fn create_recipe(
     info: Json<RecipeRequest>,
-    _db: &State<MongoDB>,
+    db: &State<MongoDB>,
 ) -> Json<APIResponse<Option<ObjectId>>> {
-    let recipe = _db.create_recipe(&info.0);
+    let recipe = db.create_recipe(&info.0);
     let message = if recipe.is_some() {
         "Recipe created."
     } else {
@@ -53,14 +63,14 @@ pub async fn create_recipe(
 }
 
 #[put("/<iid>", format = "application/json", data = "<info>")]
-pub async fn update_recipe(
+async fn update_recipe(
     iid: &str,
     info: Json<RecipeRequest>,
-    _db: &State<MongoDB>,
+    db: &State<MongoDB>,
 ) -> Json<APIResponse<bool>> {
     match ObjectId::parse_str(iid) {
         Ok(id) => {
-            let update = _db.update_recipe(&id, &info.0);
+            let update = db.update_recipe(&id, &info.0);
             let message = if update {
                 "Recipe updated."
             } else {
@@ -86,10 +96,10 @@ pub async fn update_recipe(
 }
 
 #[delete("/<iid>")]
-pub async fn delete_recipe(iid: &str, _db: &State<MongoDB>) -> Json<APIResponse<bool>> {
+async fn delete_recipe(iid: &str, db: &State<MongoDB>) -> Json<APIResponse<bool>> {
     match ObjectId::parse_str(iid) {
         Ok(id) => {
-            let update = _db.delete_recipe(&id);
+            let update = db.delete_recipe(&id);
             let message = if update {
                 "Recipe deleted."
             } else {

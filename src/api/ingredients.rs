@@ -7,11 +7,21 @@ use crate::{db::mongodb::MongoDB, model::product::Product};
 
 use super::response::APIResponse;
 
+pub fn ingredient_routes() -> Vec<rocket::Route> {
+    routes![
+        get_all_ingredients,
+        create_ingredient,
+        get_ingredint_by_id,
+        update_ingredient,
+        delete_ingredient
+    ]
+}
+
 #[get("/")]
-pub async fn get_all_ingredients(_db: &State<MongoDB>) -> Json<APIResponse<Option<Vec<Product>>>> {
+async fn get_all_ingredients(_db: &State<MongoDB>) -> Json<APIResponse<Option<Vec<Product>>>> {
     let products = _db.get_all_products();
     let message = if let Some(ref products) = products {
-        if !products.is_empty() {
+        if !products.is_empty() {   
             "Products retrieved successfully."
         } else {
             "No products found."
@@ -31,11 +41,11 @@ pub async fn get_all_ingredients(_db: &State<MongoDB>) -> Json<APIResponse<Optio
 }
 
 #[post("/", format = "application/json", data = "<product>")]
-pub async fn create_ingredient(
+async fn create_ingredient(
     product: Json<Product>,
-    _db: &State<MongoDB>,
+    db: &State<MongoDB>,
 ) -> Json<APIResponse<Option<ObjectId>>> {
-    let product_id = _db.create_ingredient(&product.into_inner());
+    let product_id = db.create_ingredient(&product.into_inner());
     let message = if product_id.is_some() {
         "Product created successfully."
     } else {
@@ -53,7 +63,7 @@ pub async fn create_ingredient(
 }
 
 #[get("/<rid>?<id>")]
-pub async fn get_ingredint_by_id(
+async fn get_ingredint_by_id(
     id: String,
     rid: String,
     db: &State<MongoDB>,
@@ -79,7 +89,7 @@ pub async fn get_ingredint_by_id(
 }
 
 #[put("/<id>", format = "application/json", data = "<product>")]
-pub async fn update_ingredient(
+async fn update_ingredient(
     id: String,
     product: Json<Product>,
     db: &State<MongoDB>,
@@ -103,7 +113,7 @@ pub async fn update_ingredient(
 }
 
 #[delete("/<rid>?<id>")]
-pub async fn delete_ingredient(
+async fn delete_ingredient(
     id: String,
     rid: String,
     db: &State<MongoDB>,

@@ -8,20 +8,26 @@ use crate::{
 
 use super::response::APIResponse;
 
+pub fn inventory_routes() -> Vec<rocket::Route> {
+    routes![
+        get_all_inventory,
+        get_inventory,
+        create_inventory,
+        update_inventory,
+    ]
+}
+
 #[get("/")]
-pub async fn get_all_inventory(_db: &State<MongoDB>) -> Json<Option<Vec<Inventory>>> {
-    Json(_db.get_all_inventory())
+async fn get_all_inventory(db: &State<MongoDB>) -> Json<Option<Vec<Inventory>>> {
+    Json(db.get_all_inventory())
 }
 
 #[get("/<iid>")]
-pub async fn get_inventory(
-    iid: &str,
-    _db: &State<MongoDB>,
-) -> Json<APIResponse<Option<Inventory>>> {
+async fn get_inventory(iid: &str, db: &State<MongoDB>) -> Json<APIResponse<Option<Inventory>>> {
     match ObjectId::parse_str(iid) {
         Ok(id) => Json(APIResponse {
             code: 200,
-            data: _db.get_inventory(&id),
+            data: db.get_inventory(&id),
             message: "".to_string(),
         }),
         Err(ex) => {
@@ -36,11 +42,11 @@ pub async fn get_inventory(
 }
 
 #[post("/", format = "application/json", data = "<info>")]
-pub async fn create_inventory(
+async fn create_inventory(
     info: Json<InventoryRequest>,
-    _db: &State<MongoDB>,
+    db: &State<MongoDB>,
 ) -> Json<APIResponse<Option<ObjectId>>> {
-    let inventory = _db.create_inventory(&info.0);
+    let inventory = db.create_inventory(&info.0);
     let message = if inventory.is_some() {
         "Inventory created."
     } else {
@@ -56,7 +62,7 @@ pub async fn create_inventory(
 }
 
 #[put("/<iid>", format = "application/json", data = "<info>")]
-pub async fn update_inventory(
+async fn update_inventory(
     iid: &str,
     info: Json<InventoryRequest>,
     db: &State<MongoDB>,
@@ -68,35 +74,6 @@ pub async fn update_inventory(
                 "Inventory updated."
             } else {
                 "Error while updating."
-            }
-            .to_string();
-            let response = APIResponse {
-                code: 200,
-                data: update,
-                message,
-            };
-            Json(response)
-        }
-        Err(ex) => {
-            println!("{:?}", ex);
-            Json(APIResponse {
-                code: 500,
-                data: false,
-                message: "ID bad format".to_string(),
-            })
-        }
-    }
-}
-
-#[delete("/<iid>")]
-pub async fn delete_inventory(iid: &str, _db: &State<MongoDB>) -> Json<APIResponse<bool>> {
-    match ObjectId::parse_str(iid) {
-        Ok(id) => {
-            let update = _db.delete_inventory(&id);
-            let message = if update {
-                "Inventory deleted."
-            } else {
-                "Error while deleting."
             }
             .to_string();
             let response = APIResponse {

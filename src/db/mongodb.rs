@@ -125,7 +125,7 @@ impl MongoDB {
         _collection_name: &str,
         _query: Document,
         _doc: Document,
-        _options: Option<UpdateOptions>,
+        _options: impl Into<Option<UpdateOptions>>,
     ) -> bool
     where
         T: for<'a> Deserialize<'a>,

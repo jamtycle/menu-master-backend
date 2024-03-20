@@ -8,17 +8,27 @@ use crate::{
 
 use super::response::APIResponse;
 
+pub fn prep_list_routes() -> Vec<rocket::Route> {
+    routes![
+        get_all_prep_list,
+        get_prep_list,
+        create_prep_list,
+        update_prep_list,
+        delete_prep_list
+    ]
+}
+
 #[get("/")]
-pub async fn get_all_prep_list(_db: &State<MongoDB>) -> Json<Option<Vec<PrepList>>> {
-    Json(_db.get_all_prep_list())
+async fn get_all_prep_list(db: &State<MongoDB>) -> Json<Option<Vec<PrepList>>> {
+    Json(db.get_all_prep_list())
 }
 
 #[get("/<iid>")]
-pub async fn get_prep_list(iid: &str, _db: &State<MongoDB>) -> Json<APIResponse<Option<PrepList>>> {
+async fn get_prep_list(iid: &str, db: &State<MongoDB>) -> Json<APIResponse<Option<PrepList>>> {
     match ObjectId::parse_str(iid) {
         Ok(id) => Json(APIResponse {
             code: 200,
-            data: _db.get_prep_list(&id),
+            data: db.get_prep_list(&id),
             message: "".to_string(),
         }),
         Err(ex) => {
@@ -33,11 +43,11 @@ pub async fn get_prep_list(iid: &str, _db: &State<MongoDB>) -> Json<APIResponse<
 }
 
 #[post("/", format = "application/json", data = "<info>")]
-pub async fn create_prep_list(
+async fn create_prep_list(
     info: Json<PrepListRequest>,
-    _db: &State<MongoDB>,
+    db: &State<MongoDB>,
 ) -> Json<APIResponse<Option<ObjectId>>> {
-    let prep_list = _db.create_prep_list(&info.0);
+    let prep_list = db.create_prep_list(&info.0);
     let message = if prep_list.is_some() {
         "Prep List created."
     } else {
@@ -53,14 +63,14 @@ pub async fn create_prep_list(
 }
 
 #[put("/<iid>", format = "application/json", data = "<info>")]
-pub async fn update_prep_list(
+async fn update_prep_list(
     iid: &str,
     info: Json<PrepListRequest>,
-    _db: &State<MongoDB>,
+    db: &State<MongoDB>,
 ) -> Json<APIResponse<bool>> {
     match ObjectId::parse_str(iid) {
         Ok(id) => {
-            let update = _db.update_prep_list(&id, &info.0);
+            let update = db.update_prep_list(&id, &info.0);
             let message = if update {
                 "Prep List updated."
             } else {
@@ -86,10 +96,10 @@ pub async fn update_prep_list(
 }
 
 #[delete("/<iid>")]
-pub async fn delete_prep_list(iid: &str, _db: &State<MongoDB>) -> Json<APIResponse<bool>> {
+async fn delete_prep_list(iid: &str, db: &State<MongoDB>) -> Json<APIResponse<bool>> {
     match ObjectId::parse_str(iid) {
         Ok(id) => {
-            let update = _db.delete_prep_list(&id);
+            let update = db.delete_prep_list(&id);
             let message = if update {
                 "Prep List deleted."
             } else {

@@ -1,6 +1,12 @@
-use mongodb::bson::{doc, oid::ObjectId};
+use mongodb::{
+    bson::{doc, oid::ObjectId},
+    options::UpdateOptions,
+};
 
-use crate::{db::mongodb::MongoDB, model::inventory::{Inventory, InventoryRequest}};
+use crate::{
+    db::mongodb::MongoDB,
+    model::inventory::{Inventory, InventoryRequest},
+};
 
 impl MongoDB {
     pub fn get_all_inventory(&self) -> Option<Vec<Inventory>> {
@@ -24,7 +30,12 @@ impl MongoDB {
         match MongoDB::doc_from(_inventory) {
             Some(udoc) => {
                 let doc = udoc.clone();
-                self.update_one::<Inventory>("inventory", doc! { "_id": id }, doc, None)
+                self.update_one::<Inventory>(
+                    "inventory",
+                    doc! { "_id": id },
+                    doc,
+                    UpdateOptions::builder().upsert(true).build(),
+                )
             }
             None => false,
         }
