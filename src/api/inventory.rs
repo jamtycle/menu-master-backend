@@ -59,11 +59,11 @@ pub async fn create_inventory(
 pub async fn update_inventory(
     iid: &str,
     info: Json<InventoryRequest>,
-    _db: &State<MongoDB>,
+    db: &State<MongoDB>,
 ) -> Json<APIResponse<bool>> {
     match ObjectId::parse_str(iid) {
         Ok(id) => {
-            let update = _db.update_inventory(&id, &info.0);
+            let update = db.update_inventory(&id, &info.0);
             let message = if update {
                 "Inventory updated."
             } else {

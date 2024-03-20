@@ -1,6 +1,6 @@
 use mongodb::bson::{doc, oid::ObjectId};
 
-use crate::{db::mongodb::MongoDB, model::user::User};
+use crate::{db::mongodb::MongoDB, model::users::User};
 
 impl MongoDB {
     pub fn get_users(&self) -> Option<Vec<User>> {

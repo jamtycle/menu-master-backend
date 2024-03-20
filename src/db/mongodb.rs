@@ -1,6 +1,6 @@
 use mongodb::{
-    bson::{oid::ObjectId, Document, doc},
-    options::{FindOneOptions, FindOptions, InsertOneOptions, UpdateOptions, DeleteOptions},
+    bson::{doc, oid::ObjectId, Document},
+    options::{DeleteOptions, FindOneOptions, FindOptions, InsertOneOptions, UpdateOptions},
     sync::{Client, Collection},
 };
 use serde::{Deserialize, Serialize};
@@ -16,19 +16,17 @@ impl MongoDB {
             "mongodb://bramirez:bramirez%4006~@170.187.155.55:27017/?retryWrites=true&w=majority",
         )
         .expect("Cannot connect to database!");
-        let db = client.database("test");
+        let db = client.database("menu-master");
         let mut collections: HashMap<String, Collection<Document>> = HashMap::new();
 
-        let user: Collection<Document> = db.collection("user");
-        let inventory: Collection<Document> = db.collection("inventory");
-        let prep_list: Collection<Document> = db.collection("prep_list");
-        let product: Collection<Document> = db.collection("product");
-        let recipe: Collection<Document> = db.collection("recipe");
-        collections.insert(String::from("user"), user);
-        collections.insert(String::from("inventory"), inventory);
-        collections.insert(String::from("prep_list"), prep_list);
-        collections.insert(String::from("product"), product);
-        collections.insert(String::from("recipe"), recipe);
+        let col_names = db
+            .list_collection_names(None)
+            .expect("Error getting collections!");
+
+        for name in col_names.iter() {
+            let col = db.collection(name);
+            collections.insert(name.to_string(), col);
+        }
 
         MongoDB { collections }
     }
@@ -145,7 +143,7 @@ impl MongoDB {
                 }
 
                 true
-            },
+            }
             Err(ex) => {
                 println!("Find One DB Error: {:?}", ex);
                 false

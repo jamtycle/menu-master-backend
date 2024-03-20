@@ -1,13 +1,13 @@
 use mongodb::bson::oid::ObjectId;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum UserType {
-    #[serde(rename="manager")]
+    #[serde(rename = "manager")]
     Manager,
-    #[serde(rename="chef")]
+    #[serde(rename = "chef")]
     Chef,
-    #[serde(rename="staff")]
+    #[serde(rename = "staff")]
     Staff,
 }
 
@@ -17,11 +17,24 @@ pub struct User {
     pub _id: Option<ObjectId>,
     pub username: String,
     pub password: String,
+    pub first_name: String,
+    pub last_name: String,
+    pub login_key: String,
+    pub email: String,
+    pub restaurant_id: ObjectId,
     pub user_type: UserType,
+    pub active: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LoginRequest {
     pub username: String,
     pub password: String,
+    pub first_name: String,
+    pub last_name: String,
+    pub login_key: String,
+    pub email: String,
+    pub restaurant_id: ObjectId,
+    pub user_type: UserType,
+    pub active: bool,
 }

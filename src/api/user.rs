@@ -3,7 +3,7 @@ use rocket::{serde::json::Json, State};
 
 use crate::{
     db::mongodb::MongoDB,
-    model::user::{LoginRequest, User},
+    model::users::{LoginRequest, User},
 };
 
 use super::response::APIResponse;

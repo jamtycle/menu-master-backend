@@ -8,7 +8,7 @@ use crate::{db::mongodb::MongoDB, model::product::Product};
 use super::response::APIResponse;
 
 #[get("/")]
-pub async fn get_all_products(_db: &State<MongoDB>) -> Json<APIResponse<Option<Vec<Product>>>> {
+pub async fn get_all_ingredients(_db: &State<MongoDB>) -> Json<APIResponse<Option<Vec<Product>>>> {
     let products = _db.get_all_products();
     let message = if let Some(ref products) = products {
         if !products.is_empty() {
@@ -31,11 +31,11 @@ pub async fn get_all_products(_db: &State<MongoDB>) -> Json<APIResponse<Option<V
 }
 
 #[post("/", format = "application/json", data = "<product>")]
-pub async fn create_product(
+pub async fn create_ingredient(
     product: Json<Product>,
     _db: &State<MongoDB>,
 ) -> Json<APIResponse<Option<ObjectId>>> {
-    let product_id = _db.create_product(&product.into_inner());
+    let product_id = _db.create_ingredient(&product.into_inner());
     let message = if product_id.is_some() {
         "Product created successfully."
     } else {
@@ -52,13 +52,15 @@ pub async fn create_product(
     Json(response)
 }
 
-#[get("/<id>")]
-pub async fn get_product_by_id(
+#[get("/<rid>?<id>")]
+pub async fn get_ingredint_by_id(
     id: String,
-    _db: &State<MongoDB>,
+    rid: String,
+    db: &State<MongoDB>,
 ) -> Json<APIResponse<Option<Product>>> {
-    let product_id = ObjectId::from_str(&id).ok();
-    let product = _db.get_product(&product_id.unwrap());
+    let ingredient_id = ObjectId::from_str(&id).ok();
+    let restaurant_id = ObjectId::from_str(&rid).ok();
+    let product = db.get_ingredient(&ingredient_id.unwrap(), &restaurant_id.unwrap());
 
     let message = if product.is_some() {
         "Product retrieved successfully."
@@ -76,12 +78,14 @@ pub async fn get_product_by_id(
     Json(response)
 }
 
-#[put("/", format = "application/json", data = "<product>")]
-pub async fn update_product(
+#[put("/<id>", format = "application/json", data = "<product>")]
+pub async fn update_ingredient(
+    id: String,
     product: Json<Product>,
-    _db: &State<MongoDB>,
+    db: &State<MongoDB>,
 ) -> Json<APIResponse<bool>> {
-    let success = _db.update_product(&product.into_inner());
+    let ingredient_id = ObjectId::from_str(&id).ok();
+    let success = db.update_ingredient(&ingredient_id.unwrap(), &product.into_inner());
     let message = if success {
         "Product updated successfully."
     } else {
@@ -98,10 +102,15 @@ pub async fn update_product(
     Json(response)
 }
 
-#[delete("/<id>")]
-pub async fn delete_product_by_id(id: String, _db: &State<MongoDB>) -> Json<APIResponse<bool>> {
+#[delete("/<rid>?<id>")]
+pub async fn delete_ingredient(
+    id: String,
+    rid: String,
+    db: &State<MongoDB>,
+) -> Json<APIResponse<bool>> {
     let product_id = ObjectId::from_str(&id).ok();
-    let success = _db.delete_product(&product_id.unwrap());
+    let restaurant_id = ObjectId::from_str(&rid).ok();
+    let success = db.delete_ingredient(&product_id.unwrap(), &restaurant_id.unwrap());
 
     let message = if success {
         "Product deleted successfully."
