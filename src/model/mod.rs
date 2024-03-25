@@ -1,9 +1,9 @@
 pub mod inventory;
 pub mod users;
 pub mod recipe;
-pub mod product;
 pub mod prep_list;
 pub mod ingredients;
 pub mod menu;
 pub mod restaurants;
 pub mod mongo_tables;
+pub mod product_order;

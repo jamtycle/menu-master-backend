@@ -1,3 +1,6 @@
+use mongodb::bson::oid::ObjectId;
+use serde::{Deserialize, Serialize};
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Ingredient {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
@@ -11,6 +14,7 @@ pub struct Ingredient {
     pub supplier: String,
     pub season: String,
     pub pack_size: String,
+    pub raw_material: bool,
     pub notes: String,
 }
 
@@ -25,5 +29,6 @@ pub struct IngredientRequest {
     pub supplier: String,
     pub season: String,
     pub pack_size: String,
+    pub raw_material: bool,
     pub notes: String,
 }

@@ -3,7 +3,10 @@ use std::str::FromStr;
 use mongodb::bson::oid::ObjectId;
 use rocket::{serde::json::Json, State};
 
-use crate::{db::mongodb::MongoDB, model::product::Product};
+use crate::{
+    db::mongodb::MongoDB,
+    model::ingredients::{Ingredient, IngredientRequest},
+};
 
 use super::response::APIResponse;
 
@@ -17,32 +20,31 @@ pub fn ingredient_routes() -> Vec<rocket::Route> {
     ]
 }
 
-#[get("/")]
-async fn get_all_ingredients(_db: &State<MongoDB>) -> Json<APIResponse<Option<Vec<Product>>>> {
-    let products = _db.get_all_products();
-    let message = if let Some(ref products) = products {
-        if !products.is_empty() {   
-            "Products retrieved successfully."
-        } else {
-            "No products found."
+#[get("/<rid>")]
+async fn get_all_ingredients(
+    rid: &str,
+    db: &State<MongoDB>,
+) -> Json<APIResponse<Option<Vec<Ingredient>>>> {
+    match ObjectId::parse_str(rid) {
+        Ok(id) => Json(APIResponse {
+            code: 200,
+            data: db.get_all_ingredients(&id),
+            message: "".to_string(),
+        }),
+        Err(ex) => {
+            println!("{:?}", ex);
+            return Json(APIResponse {
+                code: 500,
+                data: None,
+                message: "ID bad format.".to_string(),
+            });
         }
-    } else {
-        "Error retrieving products."
     }
-    .to_string();
-
-    let response = APIResponse {
-        code: 200,
-        data: products,
-        message,
-    };
-
-    Json(response)
 }
 
 #[post("/", format = "application/json", data = "<product>")]
 async fn create_ingredient(
-    product: Json<Product>,
+    product: Json<IngredientRequest>,
     db: &State<MongoDB>,
 ) -> Json<APIResponse<Option<ObjectId>>> {
     let product_id = db.create_ingredient(&product.into_inner());
@@ -67,7 +69,7 @@ async fn get_ingredint_by_id(
     id: String,
     rid: String,
     db: &State<MongoDB>,
-) -> Json<APIResponse<Option<Product>>> {
+) -> Json<APIResponse<Option<Ingredient>>> {
     let ingredient_id = ObjectId::from_str(&id).ok();
     let restaurant_id = ObjectId::from_str(&rid).ok();
     let product = db.get_ingredient(&ingredient_id.unwrap(), &restaurant_id.unwrap());
@@ -79,7 +81,7 @@ async fn get_ingredint_by_id(
     }
     .to_string();
 
-    let response: APIResponse<Option<Product>> = APIResponse {
+    let response: APIResponse<Option<Ingredient>> = APIResponse {
         code: 200,
         data: product,
         message,
@@ -91,7 +93,7 @@ async fn get_ingredint_by_id(
 #[put("/<id>", format = "application/json", data = "<product>")]
 async fn update_ingredient(
     id: String,
-    product: Json<Product>,
+    product: Json<IngredientRequest>,
     db: &State<MongoDB>,
 ) -> Json<APIResponse<bool>> {
     let ingredient_id = ObjectId::from_str(&id).ok();

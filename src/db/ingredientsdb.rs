@@ -1,4 +1,4 @@
-use mongodb::bson::oid::ObjectId;
+use mongodb::bson::{doc, oid::ObjectId};
 
 use crate::model::{
     ingredients::{Ingredient, IngredientRequest},
@@ -21,7 +21,7 @@ impl MongoDB {
     pub fn get_ingredient(&self, _id: &ObjectId, _rid: &ObjectId) -> Option<Ingredient> {
         self.find_one(
             Tables::Ingredients.value(),
-            doc! { "_id": _pid.clone(), "restaurant_id": _rid.clone() },
+            doc! { "_id": _id.clone(), "restaurant_id": _rid.clone() },
             None,
         )
     }

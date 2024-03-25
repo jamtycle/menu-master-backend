@@ -151,15 +151,12 @@ impl MongoDB {
         }
     }
 
-    pub fn delete_one<T>(
+    pub fn delete_one(
         &self,
         _collection_name: &str,
         _doc: Document,
         _options: Option<DeleteOptions>,
-    ) -> bool
-    where
-        T: for<'a> Deserialize<'a>,
-    {
+    ) -> bool {
         let col = self.get_collection(_collection_name);
         if col.is_none() {
             return false;

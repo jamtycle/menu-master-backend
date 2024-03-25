@@ -36,6 +36,6 @@ impl MongoDB {
     }
 
     pub fn delete_recipe(&self, _id: &ObjectId) -> bool {
-        self.delete_one::<Recipe>(Tables::Recipes.value(), doc! { "_id": _id.clone() }, None)
+        self.delete_one(Tables::Recipes.value(), doc! { "_id": _id.clone() }, None)
     }
 }

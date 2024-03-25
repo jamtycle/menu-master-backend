@@ -3,7 +3,9 @@ pub enum Tables {
     Menus,
     PrepLists,
     Recipes,
+    Inventory,
     Restaurants,
+    ProductOrder,
     Suppliers,
     Users,
 }
@@ -15,7 +17,9 @@ impl Tables {
             Tables::Menus => "menu",
             Tables::PrepLists => "prep_list",
             Tables::Recipes => "recipe",
+            Tables::Inventory => "inventory",
             Tables::Restaurants => "restaurants",
+            Tables::ProductOrder => "product_order",
             Tables::Suppliers => "suppliers",
             Tables::Users => "users",
         }

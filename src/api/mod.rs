@@ -4,3 +4,6 @@ pub mod ingredients;
 pub mod inventory;
 pub mod prep_list;
 pub mod recipe;
+pub mod menu;
+pub mod restaurant;
+pub mod product_order;

@@ -8,11 +8,11 @@ use crate::model::{
 use super::mongodb::MongoDB;
 
 impl MongoDB {
-    pub fn get_all_menus(&self) -> Option<Vec<Recipe>> {
+    pub fn get_all_menus(&self) -> Option<Vec<Menu>> {
         self.find(Tables::Menus.value(), doc! {}, None)
     }
 
-    pub fn get_menu(&self, rid: &ObjectId) -> Option<Recipe> {
+    pub fn get_menu(&self, rid: &ObjectId) -> Option<Menu> {
         self.find_one(Tables::Menus.value(), doc! { "_id": rid.clone() }, None)
     }
 
@@ -35,6 +35,6 @@ impl MongoDB {
     }
 
     pub fn delete_menu(&self, _id: &ObjectId) -> bool {
-        self.delete_one::<Menu>(Tables::Menus.value(), doc! { "_id": _id.clone() }, None)
+        self.delete_one(Tables::Menus.value(), doc! { "_id": _id.clone() }, None)
     }
 }

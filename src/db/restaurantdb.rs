@@ -1,3 +1,5 @@
+use mongodb::bson::doc;
+
 use crate::model::{mongo_tables::Tables, restaurants::Restaurant};
 
 use super::mongodb::MongoDB;

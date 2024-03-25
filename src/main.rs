@@ -8,8 +8,7 @@ extern crate rocket;
 use std::collections::HashMap;
 
 use api::{
-    ingredients::ingredient_routes, inventory::inventory_routes, prep_list::prep_list_routes,
-    recipe::recipe_routes, response::APIResponse, user::user_routes,
+    ingredients::ingredient_routes, inventory::inventory_routes, menu::menu_routes, prep_list::prep_list_routes, product_order::product_order_routes, recipe::recipe_routes, response::APIResponse, restaurant::restaurant_routes, user::user_routes
 };
 use config::{cors::CORS, restful::RESTFul};
 use db::mongodb::MongoDB;
@@ -51,11 +50,14 @@ fn rocket() -> _ {
         .manage(generate_db())
         .register("/", catchers![error_handler])
         .mount("/", routes![index, delay])
-        .mount("/user", user_routes())
         .mount("/ingedient", ingredient_routes())
         .mount("/inventory", inventory_routes())
+        .mount("/menu", menu_routes())
         .mount("/preplist", prep_list_routes())
+        .mount("/productorder", product_order_routes())
         .mount("/recipe", recipe_routes())
+        .mount("/restaurant", restaurant_routes())
+        .mount("/user", user_routes())
 }
 
 fn generate_db() -> MongoDB {

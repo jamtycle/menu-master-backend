@@ -19,8 +19,12 @@ pub fn prep_list_routes() -> Vec<rocket::Route> {
 }
 
 #[get("/")]
-async fn get_all_prep_list(db: &State<MongoDB>) -> Json<Option<Vec<PrepList>>> {
-    Json(db.get_all_prep_list())
+async fn get_all_prep_list(db: &State<MongoDB>) -> Json<APIResponse<Option<Vec<PrepList>>>> {
+    Json(APIResponse {
+        code: 200,
+        data: db.get_all_prep_list(),
+        message: "".to_string(),
+    })
 }
 
 #[get("/<iid>")]
