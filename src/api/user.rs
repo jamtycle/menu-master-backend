@@ -1,9 +1,8 @@
-use mongodb::bson::oid::ObjectId;
 use rocket::{serde::json::Json, State};
 
 use crate::{
     db::mongodb::MongoDB,
-    model::users::{LoginRequest, User},
+    model::users::{LoginRequest, User, UserResponse},
 };
 
 use super::response::APIResponse;
@@ -13,46 +12,26 @@ pub fn user_routes() -> Vec<rocket::Route> {
 }
 
 #[get("/")]
-async fn get_users(_db: &State<MongoDB>) -> Json<Option<Vec<User>>> {
-    Json(_db.get_users())
+async fn get_users(db: &State<MongoDB>) -> Json<APIResponse<Vec<UserResponse>>> {
+    Json(APIResponse::new_success_nm(
+        db.get_users()
+            .map(|u| u.into_iter().map(|user| user.into()).collect()),
+    ))
 }
 
 #[post("/login", format = "application/json", data = "<info>")]
 async fn login_user(
     info: Json<LoginRequest>,
-    _db: &State<MongoDB>,
-) -> Json<APIResponse<Option<User>>> {
-    let user = _db.login_user(&info.username, &info.password);
-    let message = if user.is_some() {
-        "User login success."
-    } else {
-        "Incorrect Username or Password."
-    }
-    .to_string();
-    let response = APIResponse {
-        code: 200,
-        data: user,
-        message,
-    };
-    Json(response)
+    db: &State<MongoDB>,
+) -> Json<APIResponse<UserResponse>> {
+    Json(APIResponse::new_success_nm(
+        db.login_user(&info.username, &info.password),
+    ))
 }
 
 #[post("/register", format = "application/json", data = "<info>")]
-async fn register_user(
-    info: Json<User>,
-    _db: &State<MongoDB>,
-) -> Json<APIResponse<Option<ObjectId>>> {
-    let uid = _db.register_user(&info.0);
-    let message = if uid.is_some() {
-        "User registered successfully."
-    } else {
-        "User register error."
-    }
-    .to_string();
-    let response = APIResponse {
-        code: 200,
-        data: uid,
-        message,
-    };
-    Json(response)
+async fn register_user(info: Json<User>, db: &State<MongoDB>) -> Json<APIResponse<String>> {
+    return Json(APIResponse::new_success_nm(
+        db.register_user(&info.0).map(|x| x.to_hex()),
+    ));
 }

@@ -22,7 +22,7 @@ impl MongoDB {
         let col_names = db
             .list_collection_names(None)
             .expect("Error getting collections!");
-
+        
         for name in col_names.iter() {
             let col = db.collection(name);
             collections.insert(name.to_string(), col);
@@ -68,7 +68,7 @@ impl MongoDB {
         }
     }
 
-    pub fn find_one<T>(
+    pub fn  find_one<T>(
         &self,
         _collection_name: &str,
         _filter: Document,
@@ -88,6 +88,7 @@ impl MongoDB {
                     return None;
                 }
 
+                // doc.map(|x| MongoDB::doc_to::<T>(x))?
                 MongoDB::doc_to::<T>(doc.unwrap().clone())
             }
             Err(ex) => {

@@ -1,29 +1,28 @@
 use mongodb::bson::{doc, oid::ObjectId};
 
-use crate::model::{
-    ingredients::{Ingredient, IngredientRequest},
-    mongo_tables::Tables,
-};
+use crate::model::ingredients::{Ingredient, IngredientRequest, IngredientResponse};
 
-use super::mongodb::MongoDB;
+use super::{mongo_tables::Tables, mongodb::MongoDB};
 
 impl MongoDB {
-    pub fn get_all_ingredients(&self, _rid: &ObjectId) -> Option<Vec<Ingredient>> {
-        self.find(
+    pub fn get_all_ingredients(&self, _rid: &ObjectId) -> Option<Vec<IngredientResponse>> {
+        self.find::<Ingredient>(
             Tables::Ingredients.value(),
             doc! {
                 "restaurant_id": _rid.clone()
             },
             None,
         )
+        .map(|d| d.into_iter().map(|x| x.into()).collect())
     }
 
-    pub fn get_ingredient(&self, _id: &ObjectId, _rid: &ObjectId) -> Option<Ingredient> {
-        self.find_one(
+    pub fn get_ingredient(&self, _id: &ObjectId, _rid: &ObjectId) -> Option<IngredientResponse> {
+        self.find_one::<Ingredient>(
             Tables::Ingredients.value(),
             doc! { "_id": _id.clone(), "restaurant_id": _rid.clone() },
             None,
         )
+        .map(|d| d.into())
     }
 
     pub fn create_ingredient(&self, _ingredient: &IngredientRequest) -> Option<ObjectId> {

@@ -8,7 +8,9 @@ extern crate rocket;
 use std::collections::HashMap;
 
 use api::{
-    ingredients::ingredient_routes, inventory::inventory_routes, menu::menu_routes, prep_list::prep_list_routes, product_order::product_order_routes, recipe::recipe_routes, response::APIResponse, restaurant::restaurant_routes, user::user_routes
+    ingredients::ingredient_routes, inventory::inventory_routes, menu::menu_routes,
+    prep_list::prep_list_routes, product_order::product_order_routes, recipe::recipe_routes,
+    response::APIResponse, restaurant::restaurant_routes, user::user_routes,
 };
 use config::{cors::CORS, restful::RESTFul};
 use db::mongodb::MongoDB;
@@ -36,7 +38,7 @@ async fn delay(seconds: u64) -> String {
 async fn error_handler(_status: Status, _request: &Request<'_>) -> Json<APIResponse<String>> {
     let response = APIResponse {
         code: _status.code,
-        data: _status.reason().unwrap_or("Server Error").to_string(),
+        data: Some(_status.reason().unwrap_or("Server Error").to_string()),
         message: "Server error handler.".to_string(),
     };
     Json(response)
@@ -50,7 +52,7 @@ fn rocket() -> _ {
         .manage(generate_db())
         .register("/", catchers![error_handler])
         .mount("/", routes![index, delay])
-        .mount("/ingedient", ingredient_routes())
+        .mount("/ingredient", ingredient_routes())
         .mount("/inventory", inventory_routes())
         .mount("/menu", menu_routes())
         .mount("/preplist", prep_list_routes())

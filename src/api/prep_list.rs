@@ -3,7 +3,7 @@ use rocket::{serde::json::Json, State};
 
 use crate::{
     db::mongodb::MongoDB,
-    model::prep_list::{PrepList, PrepListRequest},
+    model::prep_list::{PrepListRequest, PrepListResponse},
 };
 
 use super::response::APIResponse;
@@ -19,51 +19,23 @@ pub fn prep_list_routes() -> Vec<rocket::Route> {
 }
 
 #[get("/")]
-async fn get_all_prep_list(db: &State<MongoDB>) -> Json<APIResponse<Option<Vec<PrepList>>>> {
-    Json(APIResponse {
-        code: 200,
-        data: db.get_all_prep_list(),
-        message: "".to_string(),
-    })
+async fn get_all_prep_list(db: &State<MongoDB>) -> Json<APIResponse<Vec<PrepListResponse>>> {
+    Json(APIResponse::new_success_nm(db.get_all_prep_list()))
 }
 
 #[get("/<iid>")]
-async fn get_prep_list(iid: &str, db: &State<MongoDB>) -> Json<APIResponse<Option<PrepList>>> {
-    match ObjectId::parse_str(iid) {
-        Ok(id) => Json(APIResponse {
-            code: 200,
-            data: db.get_prep_list(&id),
-            message: "".to_string(),
-        }),
-        Err(ex) => {
-            println!("{:?}", ex);
-            Json(APIResponse {
-                code: 500,
-                data: None,
-                message: "ID bad format.".to_string(),
-            })
-        }
-    }
+async fn get_prep_list(iid: &str, db: &State<MongoDB>) -> Json<APIResponse<PrepListResponse>> {
+    let id = ObjectId::parse_str(iid).unwrap();
+    Json(APIResponse::new_success_nm(db.get_prep_list(&id)))
 }
 
 #[post("/", format = "application/json", data = "<info>")]
 async fn create_prep_list(
     info: Json<PrepListRequest>,
     db: &State<MongoDB>,
-) -> Json<APIResponse<Option<ObjectId>>> {
-    let prep_list = db.create_prep_list(&info.0);
-    let message = if prep_list.is_some() {
-        "Prep List created."
-    } else {
-        "Prep List was not created."
-    }
-    .to_string();
-    let response = APIResponse {
-        code: 200,
-        data: prep_list,
-        message,
-    };
-    Json(response)
+) -> Json<APIResponse<String>> {
+    let info = db.create_prep_list(&info.0).map(|x| x.to_hex());
+    return Json(APIResponse::new_success_nm(info));
 }
 
 #[put("/<iid>", format = "application/json", data = "<info>")]
@@ -72,58 +44,18 @@ async fn update_prep_list(
     info: Json<PrepListRequest>,
     db: &State<MongoDB>,
 ) -> Json<APIResponse<bool>> {
-    match ObjectId::parse_str(iid) {
-        Ok(id) => {
-            let update = db.update_prep_list(&id, &info.0);
-            let message = if update {
-                "Prep List updated."
-            } else {
-                "Error while updating."
-            }
-            .to_string();
-            let response = APIResponse {
-                code: 200,
-                data: update,
-                message,
-            };
-            Json(response)
-        }
-        Err(ex) => {
-            println!("{:?}", ex);
-            Json(APIResponse {
-                code: 500,
-                data: false,
-                message: "ID bad format".to_string(),
-            })
-        }
-    }
+    let id = ObjectId::parse_str(iid).unwrap();
+    Json(APIResponse::new_success(
+        db.update_prep_list(&id, &info.0),
+        "Prep List updated.",
+    ))
 }
 
 #[delete("/<iid>")]
 async fn delete_prep_list(iid: &str, db: &State<MongoDB>) -> Json<APIResponse<bool>> {
-    match ObjectId::parse_str(iid) {
-        Ok(id) => {
-            let update = db.delete_prep_list(&id);
-            let message = if update {
-                "Prep List deleted."
-            } else {
-                "Error while deleting."
-            }
-            .to_string();
-            let response = APIResponse {
-                code: 200,
-                data: update,
-                message,
-            };
-            Json(response)
-        }
-        Err(ex) => {
-            println!("{:?}", ex);
-            Json(APIResponse {
-                code: 500,
-                data: false,
-                message: "ID bad format".to_string(),
-            })
-        }
-    }
+    let id = ObjectId::parse_str(iid).unwrap();
+    Json(APIResponse::new_success(
+        db.delete_prep_list(&id),
+        "Prep List deleted.",
+    ))
 }

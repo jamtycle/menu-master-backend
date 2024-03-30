@@ -4,31 +4,35 @@ use mongodb::bson::{doc, oid::ObjectId, Decimal128};
 
 use crate::model::{
     inventory::InventoryRequest,
-    mongo_tables::Tables,
-    product_order::{ProductOrder, ProductOrderRequest},
+    product_order::{ProductOrder, ProductOrderRequest, ProductOrderResponse},
 };
 
-use super::mongodb::MongoDB;
+use super::{mongo_tables::Tables, mongodb::MongoDB};
 
 impl MongoDB {
-    pub fn get_restaurant_orders(&self, _rid: ObjectId) -> Option<Vec<ProductOrder>> {
-        self.find(
+    pub fn get_restaurant_orders(&self, _rid: ObjectId) -> Option<Vec<ProductOrderResponse>> {
+        self.find::<ProductOrder>(
             Tables::ProductOrder.value(),
             doc! {
                 "restaurant_id": _rid
             },
             None,
         )
+        .map(|o| o.into_iter().map(|p| p.into()).collect())
     }
 
-    pub fn get_restaurant_order_by_ingredient(&self, _iid: ObjectId) -> Option<ProductOrder> {
-        self.find_one(
+    pub fn get_restaurant_order_by_ingredient(
+        &self,
+        _iid: ObjectId,
+    ) -> Option<ProductOrderResponse> {
+        self.find_one::<ProductOrder>(
             Tables::ProductOrder.value(),
             doc! {
                 "ingredient_id": _iid
             },
             None,
         )
+        .map(|x| x.into())
     }
 
     pub fn create_product_order(&self, _product_order: &ProductOrderRequest) -> Option<ObjectId> {

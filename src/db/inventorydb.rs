@@ -5,23 +5,24 @@ use mongodb::{
 
 use crate::{
     db::mongodb::MongoDB,
-    model::{
-        inventory::{Inventory, InventoryRequest},
-        mongo_tables::Tables,
-    },
+    model::inventory::{Inventory, InventoryRequest, InventoryResponse},
 };
 
+use super::mongo_tables::Tables;
+
 impl MongoDB {
-    pub fn get_all_inventory(&self) -> Option<Vec<Inventory>> {
-        self.find(Tables::Inventory.value(), doc! {}, None)
+    pub fn get_all_inventory(&self) -> Option<Vec<InventoryResponse>> {
+        self.find::<Inventory>(Tables::Inventory.value(), doc! {}, None)
+            .map(|inventory| inventory.into_iter().map(|inv| inv.into()).collect())
     }
 
-    pub fn get_inventory(&self, _ingredient_id: &ObjectId) -> Option<Inventory> {
-        self.find_one(
+    pub fn get_inventory(&self, _ingredient_id: &ObjectId) -> Option<InventoryResponse> {
+        self.find_one::<Inventory>(
             Tables::Inventory.value(),
             doc! { "ingredient_id": _ingredient_id.clone() },
             None,
         )
+        .map(|x| x.into())
     }
 
     pub fn create_inventory(&self, _inventory: &InventoryRequest) -> Option<ObjectId> {

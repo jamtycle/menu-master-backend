@@ -1,37 +1,37 @@
 use mongodb::bson::{doc, oid::ObjectId};
 
-use crate::model::{
-    menu::{Menu, MenuRequest},
-    mongo_tables::Tables,
-};
+use crate::model::menu::{Menu, MenuRequest, MenuResponse};
 
-use super::mongodb::MongoDB;
+use super::{mongo_tables::Tables, mongodb::MongoDB};
 
 impl MongoDB {
     pub fn get_all_menus(&self) -> Option<Vec<Menu>> {
         self.find(Tables::Menus.value(), doc! {}, None)
     }
 
-    pub fn get_menu(&self, rid: &ObjectId) -> Option<Menu> {
-        self.find_one(Tables::Menus.value(), doc! { "_id": rid.clone() }, None)
+    pub fn get_menu(&self, rid: &ObjectId) -> Option<Vec<MenuResponse>> {
+        self.find::<Menu>(
+            Tables::Menus.value(),
+            doc! { "restaurant_id": rid.clone() },
+            None,
+        )
+        .map(|m| m.into_iter().map(|x| x.into()).collect())
     }
 
     pub fn create_menu(&self, menu: &MenuRequest) -> Option<ObjectId> {
-        match MongoDB::doc_from(menu) {
-            Some(ndoc) => self.create_one::<Menu>(Tables::Menus.value(), ndoc, None),
-            None => None,
-        }
+        let doc = MongoDB::doc_from(menu);
+        return self.create_one::<Menu>(Tables::Menus.value(), doc.unwrap(), None);
     }
 
     pub fn update_menu(&self, _id: &ObjectId, menu: &MenuRequest) -> bool {
         let id = _id.clone();
-        match MongoDB::doc_from(menu) {
-            Some(udoc) => {
-                let doc = udoc.clone();
-                self.update_one::<Menu>(Tables::Menus.value(), doc! { "_id": id }, doc, None)
-            }
-            None => false,
-        }
+        let doc = MongoDB::doc_from(menu);
+        return self.update_one::<Menu>(
+            Tables::Menus.value(),
+            doc! { "_id": id },
+            doc.unwrap(),
+            None,
+        );
     }
 
     pub fn delete_menu(&self, _id: &ObjectId) -> bool {

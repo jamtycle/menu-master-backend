@@ -7,3 +7,4 @@ pub mod ingredientsdb;
 pub mod menudb;
 pub mod restaurantdb;
 pub mod product_orderdb;
+pub mod mongo_tables;

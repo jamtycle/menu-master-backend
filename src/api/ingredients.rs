@@ -5,7 +5,7 @@ use rocket::{serde::json::Json, State};
 
 use crate::{
     db::mongodb::MongoDB,
-    model::ingredients::{Ingredient, IngredientRequest},
+    model::ingredients::{IngredientRequest, IngredientResponse},
 };
 
 use super::response::APIResponse;
@@ -24,21 +24,10 @@ pub fn ingredient_routes() -> Vec<rocket::Route> {
 async fn get_all_ingredients(
     rid: &str,
     db: &State<MongoDB>,
-) -> Json<APIResponse<Option<Vec<Ingredient>>>> {
+) -> Json<APIResponse<Vec<IngredientResponse>>> {
     match ObjectId::parse_str(rid) {
-        Ok(id) => Json(APIResponse {
-            code: 200,
-            data: db.get_all_ingredients(&id),
-            message: "".to_string(),
-        }),
-        Err(ex) => {
-            println!("{:?}", ex);
-            return Json(APIResponse {
-                code: 500,
-                data: None,
-                message: "ID bad format.".to_string(),
-            });
-        }
+        Ok(id) => Json(APIResponse::new_success_nm(db.get_all_ingredients(&id))),
+        Err(ex) => Json(APIResponse::new_error(ex.to_string().as_str())),
     }
 }
 
@@ -46,96 +35,54 @@ async fn get_all_ingredients(
 async fn create_ingredient(
     product: Json<IngredientRequest>,
     db: &State<MongoDB>,
-) -> Json<APIResponse<Option<ObjectId>>> {
-    let product_id = db.create_ingredient(&product.into_inner());
-    let message = if product_id.is_some() {
-        "Product created successfully."
-    } else {
-        "Error creating the product."
-    }
-    .to_string();
-
-    let response = APIResponse {
-        code: 200,
-        data: product_id,
-        message,
-    };
-
-    Json(response)
+) -> Json<APIResponse<String>> {
+    Json(APIResponse::new_success_nm(
+        db.create_ingredient(&product.into_inner())
+            .map(|x| x.to_hex()),
+    ))
 }
 
 #[get("/<rid>?<id>")]
 async fn get_ingredint_by_id(
-    id: String,
-    rid: String,
+    id: &str,
+    rid: &str,
     db: &State<MongoDB>,
-) -> Json<APIResponse<Option<Ingredient>>> {
-    let ingredient_id = ObjectId::from_str(&id).ok();
-    let restaurant_id = ObjectId::from_str(&rid).ok();
-    let product = db.get_ingredient(&ingredient_id.unwrap(), &restaurant_id.unwrap());
-
-    let message = if product.is_some() {
-        "Product retrieved successfully."
-    } else {
-        "Product not found."
+) -> Json<APIResponse<IngredientResponse>> {
+    let ingredient_id = ObjectId::from_str(id);
+    let restaurant_id = ObjectId::from_str(rid);
+    if ingredient_id.is_err() || restaurant_id.is_err() {
+        return Json(APIResponse::new_error("bad id format"));
     }
-    .to_string();
-
-    let response: APIResponse<Option<Ingredient>> = APIResponse {
-        code: 200,
-        data: product,
-        message,
-    };
-
-    Json(response)
+    Json(APIResponse::new_success_nm(db.get_ingredient(
+        &ingredient_id.unwrap(),
+        &restaurant_id.unwrap(),
+    )))
 }
 
 #[put("/<id>", format = "application/json", data = "<product>")]
 async fn update_ingredient(
-    id: String,
+    id: &str,
     product: Json<IngredientRequest>,
     db: &State<MongoDB>,
 ) -> Json<APIResponse<bool>> {
-    let ingredient_id = ObjectId::from_str(&id).ok();
-    let success = db.update_ingredient(&ingredient_id.unwrap(), &product.into_inner());
-    let message = if success {
-        "Product updated successfully."
-    } else {
-        "Error updating the product."
+    match ObjectId::from_str(id) {
+        Ok(ingredient_id) => Json(APIResponse::new_success_nm(
+            db.update_ingredient(&ingredient_id, &product.into_inner()),
+        )),
+        Err(ex) => Json(APIResponse::new_error(ex.to_string().as_str())),
     }
-    .to_string();
-
-    let response = APIResponse {
-        code: 200,
-        data: success,
-        message,
-    };
-
-    Json(response)
 }
 
 #[delete("/<rid>?<id>")]
-async fn delete_ingredient(
-    id: String,
-    rid: String,
-    db: &State<MongoDB>,
-) -> Json<APIResponse<bool>> {
-    let product_id = ObjectId::from_str(&id).ok();
-    let restaurant_id = ObjectId::from_str(&rid).ok();
-    let success = db.delete_ingredient(&product_id.unwrap(), &restaurant_id.unwrap());
-
-    let message = if success {
-        "Product deleted successfully."
-    } else {
-        "Error deleting the product."
+async fn delete_ingredient(id: &str, rid: &str, db: &State<MongoDB>) -> Json<APIResponse<bool>> {
+    let product_id = ObjectId::from_str(id);
+    let restaurant_id = ObjectId::from_str(rid);
+    if product_id.is_err() || restaurant_id.is_err() {
+        return Json(APIResponse::new_error("bad id format"));
     }
-    .to_string();
 
-    let response = APIResponse {
-        code: 200,
-        data: success,
-        message,
-    };
-
-    Json(response)
+    Json(APIResponse::new_success_nm(db.delete_ingredient(
+        &product_id.unwrap(),
+        &restaurant_id.unwrap(),
+    )))
 }
