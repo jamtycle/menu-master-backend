@@ -12,14 +12,15 @@ use api::{
     prep_list::prep_list_routes, product_order::product_order_routes, recipe::recipe_routes,
     response::APIResponse, restaurant::restaurant_routes, user::user_routes,
 };
-use config::{cors::CORS, restful::RESTFul};
+use config::restful::RESTFul;
 use db::mongodb::MongoDB;
 use rocket::{
-    http::Status,
+    http::{Method, Status},
     serde::json::Json,
     tokio::time::{sleep, Duration},
     Request,
 };
+use rocket_cors::CorsOptions;
 
 #[get("/")]
 async fn index() -> Json<HashMap<String, String>> {
@@ -46,9 +47,13 @@ async fn error_handler(_status: Status, _request: &Request<'_>) -> Json<APIRespo
 
 #[launch]
 fn rocket() -> _ {
+    let cors = cors_options()
+        .to_cors()
+        .expect("CORS configuration failed.");
+
     rocket::build()
         .attach(RESTFul)
-        .attach(CORS)
+        .attach(cors)
         .manage(generate_db())
         .register("/", catchers![error_handler])
         .mount("/", routes![index, delay])
@@ -64,4 +69,17 @@ fn rocket() -> _ {
 
 fn generate_db() -> MongoDB {
     MongoDB::init()
+}
+
+fn cors_options() -> CorsOptions {
+    CorsOptions {
+        allowed_origins: rocket_cors::AllOrSome::All,
+        allowed_methods: vec![Method::Get, Method::Post, Method::Put, Method::Delete]
+            .into_iter()
+            .map(From::from)
+            .collect(),
+        allow_credentials: true,
+        allowed_headers: rocket_cors::AllOrSome::All,
+        ..Default::default()
+    }
 }
