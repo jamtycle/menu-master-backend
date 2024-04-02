@@ -1,6 +1,4 @@
-use std::str::FromStr;
-
-use mongodb::bson::{doc, oid::ObjectId, Decimal128};
+use mongodb::bson::{doc, oid::ObjectId};
 
 use crate::model::{
     inventory::InventoryRequest,
@@ -50,7 +48,7 @@ impl MongoDB {
         let inventory_update_status = self
             .update_inventory(&InventoryRequest {
                 ingredient_id: _product_order.ingredient_id.clone(),
-                stock: Decimal128::from_str(_product_order.quantity.to_string().as_str()).unwrap(),
+                stock: _product_order.quantity,
             })
             .await?;
 
@@ -76,13 +74,13 @@ impl MongoDB {
         let inventory_update_status = self
             .update_inventory(&InventoryRequest {
                 ingredient_id: ingredient_id.clone(),
-                stock: Decimal128::from_str((-1f64 * quantity).to_string().as_str()).unwrap(),
+                stock: (-1f64 * quantity),
             })
             .await?;
 
         if !inventory_update_status {
             return Err(mongodb::error::Error::custom("Error updating inventory"));
-        }   
+        }
 
         return Ok(info);
     }
