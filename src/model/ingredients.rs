@@ -67,4 +67,3 @@ impl Into<IngredientResponse> for Ingredient {
         }
     }
 }
- 

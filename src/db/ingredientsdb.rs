@@ -2,18 +2,27 @@ use mongodb::bson::{doc, oid::ObjectId};
 
 use crate::model::ingredients::{Ingredient, IngredientRequest, IngredientResponse};
 
-use super::{mongo_tables::Tables, mongodb::MongoDB};
+use super::{
+    mongo_tables::Tables,
+    mongodb::{MongoDB, MongoDBResult},
+};
 
 impl MongoDB {
-    pub fn get_all_ingredients(&self, _rid: &ObjectId) -> Option<Vec<IngredientResponse>> {
-        self.find::<Ingredient>(
-            Tables::Ingredients.value(),
-            doc! {
-                "restaurant_id": _rid.clone()
-            },
-            None,
-        )
-        .map(|d| d.into_iter().map(|x| x.into()).collect())
+    pub async fn get_all_ingredients(
+        &self,
+        _rid: &ObjectId,
+    ) -> MongoDBResult<Vec<IngredientResponse>> {
+        let info = self
+            .find_res::<Ingredient>(
+                Tables::Ingredients.value(),
+                doc! {
+                    "restaurant_id": _rid.clone()
+                },
+                None,
+            )
+            .await?;
+
+        Ok(info.into_iter().map(|x| x.into()).collect())
     }
 
     pub fn get_ingredient(&self, _id: &ObjectId, _rid: &ObjectId) -> Option<IngredientResponse> {
@@ -25,35 +34,42 @@ impl MongoDB {
         .map(|d| d.into())
     }
 
-    pub fn create_ingredient(&self, _ingredient: &IngredientRequest) -> Option<ObjectId> {
-        match MongoDB::doc_from(_ingredient) {
-            Some(ndoc) => self.create_one::<Ingredient>(Tables::Ingredients.value(), ndoc, None),
-            None => None,
-        }
+    pub async fn create_ingredient(
+        &self,
+        _ingredient: &IngredientRequest,
+    ) -> MongoDBResult<ObjectId> {
+        let doc = MongoDB::doc_from(_ingredient)?;
+
+        let data = self
+            .create_one::<Ingredient>(Tables::Ingredients.value(), doc, None)
+            .await?;
+
+        Ok(data)
     }
 
-    pub fn update_ingredient(&self, _id: &ObjectId, _ingredient: &IngredientRequest) -> bool {
+    pub async fn update_ingredient(
+        &self,
+        _id: &ObjectId,
+        _ingredient: &IngredientRequest,
+    ) -> MongoDBResult<bool> {
         let id = _id.clone();
+        let doc = MongoDB::doc_from(_ingredient)?;
+        let data = self
+            .update_one::<Ingredient>(Tables::Ingredients.value(), doc! { "_id": id }, doc, None)
+            .await?;
 
-        match MongoDB::doc_from(_ingredient) {
-            Some(udoc) => {
-                let doc = udoc.clone();
-                self.update_one::<Ingredient>(
-                    Tables::Ingredients.value(),
-                    doc! { "_id": id },
-                    doc,
-                    None,
-                )
-            }
-            None => false,
-        }
+        Ok(data)
     }
 
-    pub fn delete_ingredient(&self, _id: &ObjectId, _rid: &ObjectId) -> bool {
-        self.delete_one(
-            Tables::Ingredients.value(),
-            doc! { "_id": _id.clone(), "restaurant_id": _rid.clone() },
-            None,
-        )
+    pub async fn delete_ingredient(&self, _id: &ObjectId, _rid: &ObjectId) -> MongoDBResult<bool> {
+        let data = self
+            .delete_one(
+                Tables::Ingredients.value(),
+                doc! { "_id": _id.clone(), "restaurant_id": _rid.clone() },
+                None,
+            )
+            .await?;
+
+        Ok(data)
     }
 }

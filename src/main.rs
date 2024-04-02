@@ -38,8 +38,8 @@ async fn delay(seconds: u64) -> String {
 #[catch(default)]
 async fn error_handler(_status: Status, _request: &Request<'_>) -> Json<APIResponse<String>> {
     let response = APIResponse {
-        code: _status.code,
-        data: Some(_status.reason().unwrap_or("Server Error").to_string()),
+        code: _status,
+        data: Some(_status.reason_lossy().to_string()),
         message: "Server error handler.".to_string(),
     };
     Json(response)

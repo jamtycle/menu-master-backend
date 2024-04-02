@@ -5,7 +5,7 @@ use crate::{
     model::prep_list::{PrepList, PrepListRequest, PrepListResponse},
 };
 
-use super::mongo_tables::Tables;
+use super::{mongo_tables::Tables, mongodb::MongoDBResult};
 
 impl MongoDB {
     pub fn get_all_prep_list(&self) -> Option<Vec<PrepListResponse>> {
@@ -22,30 +22,34 @@ impl MongoDB {
         .map(|x| x.into())
     }
 
-    pub fn create_prep_list(&self, _prep_list: &PrepListRequest) -> Option<ObjectId> {
-        match MongoDB::doc_from(_prep_list) {
-            Some(ndoc) => self.create_one::<PrepList>(Tables::PrepLists.value(), ndoc, None),
-            None => None,
-        }
+    pub async fn create_prep_list(&self, _prep_list: &PrepListRequest) -> MongoDBResult<ObjectId> {
+        let doc = MongoDB::doc_from(_prep_list)?;
+        let data = self
+            .create_one::<PrepList>(Tables::PrepLists.value(), doc, None)
+            .await?;
+
+        Ok(data)
     }
 
-    pub fn update_prep_list(&self, _id: &ObjectId, _prep_list: &PrepListRequest) -> bool {
+    pub async fn update_prep_list(
+        &self,
+        _id: &ObjectId,
+        _prep_list: &PrepListRequest,
+    ) -> MongoDBResult<bool> {
         let id = _id.clone();
-        match MongoDB::doc_from(_prep_list) {
-            Some(udoc) => {
-                let doc = udoc.clone();
-                self.update_one::<PrepList>(
-                    Tables::PrepLists.value(),
-                    doc! { "_id": id },
-                    doc,
-                    None,
-                )
-            }
-            None => false,
-        }
+        let doc = MongoDB::doc_from(_prep_list)?;
+        let data = self
+            .update_one::<PrepList>(Tables::PrepLists.value(), doc! { "_id": id }, doc, None)
+            .await?;
+
+        Ok(data)
     }
 
-    pub fn delete_prep_list(&self, _id: &ObjectId) -> bool {
-        self.delete_one(Tables::PrepLists.value(), doc! { "_id": _id.clone() }, None)
+    pub async fn delete_prep_list(&self, _id: &ObjectId) -> MongoDBResult<bool> {
+        let data = self
+            .delete_one(Tables::PrepLists.value(), doc! { "_id": _id.clone() }, None)
+            .await?;
+
+        Ok(data)
     }
 }

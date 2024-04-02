@@ -5,7 +5,7 @@ use crate::{
     model::users::{User, UserResponse},
 };
 
-use super::mongo_tables::Tables;
+use super::{mongo_tables::Tables, mongodb::MongoDBResult};
 
 impl MongoDB {
     pub fn get_users(&self) -> Option<Vec<User>> {
@@ -18,10 +18,12 @@ impl MongoDB {
         return user.map(|u| u.into());
     }
 
-    pub fn register_user(&self, _user: &User) -> Option<ObjectId> {
-        match MongoDB::doc_from(_user) {
-            Some(ndoc) => self.create_one::<User>(Tables::Users.value(), ndoc, None),
-            None => None,
-        }
+    pub async fn register_user(&self, _user: &User) -> MongoDBResult<ObjectId> {
+        let doc = MongoDB::doc_from(_user)?;
+        let data = self
+            .create_one::<User>(Tables::Users.value(), doc, None)
+            .await?;
+
+        Ok(data)
     }
 }

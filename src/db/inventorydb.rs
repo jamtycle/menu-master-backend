@@ -8,7 +8,7 @@ use crate::{
     model::inventory::{Inventory, InventoryRequest, InventoryResponse},
 };
 
-use super::mongo_tables::Tables;
+use super::{mongo_tables::Tables, mongodb::MongoDBResult};
 
 impl MongoDB {
     pub fn get_all_inventory(&self) -> Option<Vec<InventoryResponse>> {
@@ -25,23 +25,33 @@ impl MongoDB {
         .map(|x| x.into())
     }
 
-    pub fn create_inventory(&self, _inventory: &InventoryRequest) -> Option<ObjectId> {
-        match MongoDB::doc_from(_inventory) {
-            Some(ndoc) => self.create_one::<Inventory>(Tables::Inventory.value(), ndoc, None),
-            None => None,
-        }
+    pub async fn create_inventory(&self, _inventory: &InventoryRequest) -> MongoDBResult<ObjectId> {
+        let doc = MongoDB::doc_from(_inventory)?;
+        let data = self
+            .create_one::<Inventory>(Tables::Inventory.value(), doc, None)
+            .await?;
+
+        Ok(data)
     }
 
-    pub fn update_inventory(&self, _inventory: &InventoryRequest) -> bool {
-        self.update_one::<Inventory>(
-            Tables::Inventory.value(),
-            doc! { "ingredient_id": _inventory.ingredient_id.clone() },
-            doc! { "$inc": doc! { "stock": _inventory.stock } },
-            UpdateOptions::builder().upsert(true).build(),
-        )
+    pub async fn update_inventory(&self, _inventory: &InventoryRequest) -> MongoDBResult<bool> {
+        let data = self
+            .update_one::<Inventory>(
+                Tables::Inventory.value(),
+                doc! { "ingredient_id": _inventory.ingredient_id.clone() },
+                doc! { "$inc": doc! { "stock": _inventory.stock } },
+                UpdateOptions::builder().upsert(true).build(),
+            )
+            .await?;
+
+        Ok(data)
     }
 
-    pub fn delete_inventory(&self, _id: &ObjectId) -> bool {
-        self.delete_one(Tables::Inventory.value(), doc! { "_id": _id.clone() }, None)
+    pub async fn delete_inventory(&self, _id: &ObjectId) -> MongoDBResult<bool> {
+        let data = self
+            .delete_one(Tables::Inventory.value(), doc! { "_id": _id.clone() }, None)
+            .await?;
+
+        Ok(data)
     }
 }

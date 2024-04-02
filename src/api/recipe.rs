@@ -6,7 +6,10 @@ use crate::{
     model::recipe::{RecipeRequest, RecipeResponse},
 };
 
-use super::response::APIResponse;
+use super::{
+    response::{ok, APIResponse, ApiResult},
+    utils::parse_object_id,
+};
 
 pub fn recipe_routes() -> Vec<rocket::Route> {
     routes![
@@ -30,12 +33,10 @@ async fn get_recipe(iid: &str, db: &State<MongoDB>) -> Json<APIResponse<RecipeRe
 }
 
 #[post("/", format = "application/json", data = "<info>")]
-async fn create_recipe(
-    info: Json<RecipeRequest>,
-    db: &State<MongoDB>,
-) -> Json<APIResponse<String>> {
-    let id = db.create_recipe(&info.0).unwrap();
-    Json(APIResponse::new_success_nm(id.to_hex()))
+async fn create_recipe(info: Json<RecipeRequest>, db: &State<MongoDB>) -> ApiResult<String> {
+    let data = db.create_recipe(&info.0).await?;
+
+    ok(data.to_hex())
 }
 
 #[put("/<iid>", format = "application/json", data = "<info>")]
@@ -43,13 +44,17 @@ async fn update_recipe(
     iid: &str,
     info: Json<RecipeRequest>,
     db: &State<MongoDB>,
-) -> Json<APIResponse<bool>> {
-    let id = ObjectId::parse_str(iid).unwrap();
-    Json(APIResponse::new_success_nm(db.update_recipe(&id, &info.0)))
+) -> ApiResult<bool> {
+    let id = parse_object_id(iid)?;
+    let data = db.update_recipe(&id, &info.0).await?;
+
+    ok(data)
 }
 
 #[delete("/<iid>")]
-async fn delete_recipe(iid: &str, db: &State<MongoDB>) -> Json<APIResponse<bool>> {
-    let id = ObjectId::parse_str(iid).unwrap();
-    Json(APIResponse::new_success_nm(db.delete_recipe(&id)))
+async fn delete_recipe(iid: &str, db: &State<MongoDB>) -> ApiResult<bool> {
+    let id = parse_object_id(iid)?;
+    let data = db.delete_recipe(&id).await?;
+
+    ok(data)
 }

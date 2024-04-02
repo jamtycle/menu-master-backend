@@ -1,5 +1,6 @@
 use mongodb::{
     bson::{doc, oid::ObjectId, Document},
+    error::Error as MongoDBError,
     options::{DeleteOptions, FindOneOptions, FindOptions, InsertOneOptions, UpdateOptions},
     sync::{Client, Collection},
 };
@@ -9,6 +10,8 @@ use std::collections::HashMap;
 pub struct MongoDB {
     collections: HashMap<String, Collection<Document>>,
 }
+
+pub type MongoDBResult<T> = Result<T, MongoDBError>;
 
 impl MongoDB {
     pub fn init() -> Self {
@@ -22,7 +25,7 @@ impl MongoDB {
         let col_names = db
             .list_collection_names(None)
             .expect("Error getting collections!");
-        
+
         for name in col_names.iter() {
             let col = db.collection(name);
             collections.insert(name.to_string(), col);
@@ -39,6 +42,29 @@ impl MongoDB {
                 None
             }
         }
+    }
+
+    pub fn get_collection_res(&self, _name: &str) -> Result<&Collection<Document>, MongoDBError> {
+        self.collections
+            .get(_name)
+            .ok_or(MongoDBError::custom("Collection does not exists!"))
+    }
+
+    pub async fn find_res<T>(
+        &self,
+        _collection_name: &str,
+        _filter: Document,
+        _options: Option<FindOptions>,
+    ) -> Result<Vec<T>, MongoDBError>
+    where
+        T: for<'a> Deserialize<'a>,
+    {
+        let col = self.get_collection_res(_collection_name)?;
+
+        let data = col.find(_filter, _options)?;
+        return data
+            .map(|x| x.and_then(|doc| mongodb::bson::from_document::<T>(doc).map_err(Into::into)))
+            .collect::<Result<Vec<T>, mongodb::error::Error>>();
     }
 
     pub fn find<T>(
@@ -68,7 +94,7 @@ impl MongoDB {
         }
     }
 
-    pub fn  find_one<T>(
+    pub fn find_one<T>(
         &self,
         _collection_name: &str,
         _filter: Document,
@@ -98,78 +124,54 @@ impl MongoDB {
         }
     }
 
-    pub fn create_one<T>(
+    pub async fn create_one<T>(
         &self,
         _collection_name: &str,
         _doc: Document,
-        _options: Option<InsertOneOptions>,
-    ) -> Option<ObjectId>
+        _options: impl Into<Option<InsertOneOptions>>,
+    ) -> Result<ObjectId, MongoDBError>
     where
         T: for<'a> Deserialize<'a>,
     {
-        let col = self.get_collection(_collection_name);
-        if col.is_none() {
-            return None;
-        }
+        let col = self.get_collection_res(_collection_name)?;
 
-        match col.unwrap().insert_one(_doc, _options) {
-            Ok(doc) => doc.inserted_id.as_object_id(),
-            Err(ex) => {
-                println!("Find One DB Error: {:?}", ex);
-                None
-            }
-        }
+        col.insert_one(_doc, _options)
+            .map(|x| x.inserted_id.as_object_id().unwrap())
     }
 
-    pub fn update_one<T>(
+    pub async fn update_one<T>(
         &self,
         _collection_name: &str,
         _query: Document,
         _doc: Document,
         _options: impl Into<Option<UpdateOptions>>,
-    ) -> bool
+    ) -> Result<bool, MongoDBError>
     where
         T: for<'a> Deserialize<'a>,
     {
-        let col = self.get_collection(_collection_name);
-        if col.is_none() {
-            return false;
+        let col = self.get_collection_res(_collection_name)?;
+
+        if _doc.keys().any(|x| x.contains("$")) {
+            return col
+                .update_one(_query, _doc, _options)
+                .map(|x| x.matched_count == 1 && x.modified_count == 1);
         }
 
         let upd = doc! { "$set": _doc };
-        match col.unwrap().update_one(_query, upd, _options) {
-            Ok(doc) => {
-                if doc.matched_count == 0 || doc.modified_count == 0 {
-                    return false;
-                }
-
-                true
-            }
-            Err(ex) => {
-                println!("Find One DB Error: {:?}", ex);
-                false
-            }
-        }
+        return col
+            .update_one(_query, upd, _options)
+            .map(|x| x.matched_count == 1 && x.modified_count == 1);
     }
 
-    pub fn delete_one(
+    pub async fn delete_one(
         &self,
         _collection_name: &str,
         _doc: Document,
-        _options: Option<DeleteOptions>,
-    ) -> bool {
-        let col = self.get_collection(_collection_name);
-        if col.is_none() {
-            return false;
-        }
+        _options: impl Into<Option<DeleteOptions>>,
+    ) -> Result<bool, MongoDBError> {
+        let col = self.get_collection_res(_collection_name)?;
 
-        match col.unwrap().delete_one(_doc, _options) {
-            Ok(doc) => doc.deleted_count == 1,
-            Err(ex) => {
-                println!("Find One DB Error: {:?}", ex);
-                false
-            }
-        }
+        col.delete_one(_doc, _options).map(|x| x.deleted_count == 1)
     }
 
     pub fn doc_to<T>(_doc: Document) -> Option<T>
@@ -185,16 +187,10 @@ impl MongoDB {
         }
     }
 
-    pub fn doc_from<T>(_entity: T) -> Option<Document>
+    pub fn doc_from<T>(_entity: T) -> Result<Document, MongoDBError>
     where
         T: Serialize,
     {
-        match mongodb::bson::to_document(&_entity) {
-            Ok(info) => Some(info),
-            Err(ex) => {
-                println!("Serialization Error: {:?}", ex);
-                None
-            }
-        }
+        mongodb::bson::to_document(&_entity).map_err(|x| x.into())
     }
 }

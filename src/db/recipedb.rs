@@ -5,7 +5,7 @@ use crate::{
     model::recipe::{Recipe, RecipeRequest, RecipeResponse},
 };
 
-use super::mongo_tables::Tables;
+use super::{mongo_tables::Tables, mongodb::MongoDBResult};
 
 impl MongoDB {
     pub fn get_all_recipes(&self) -> Option<Vec<RecipeResponse>> {
@@ -19,25 +19,34 @@ impl MongoDB {
         return recipe.map(|x| x.into());
     }
 
-    pub fn create_recipe(&self, recipe: &RecipeRequest) -> Option<ObjectId> {
-        match MongoDB::doc_from(recipe) {
-            Some(ndoc) => self.create_one::<Recipe>(Tables::Recipes.value(), ndoc, None),
-            None => None,
-        }
+    pub async fn create_recipe(&self, recipe: &RecipeRequest) -> MongoDBResult<ObjectId> {
+        let doc = MongoDB::doc_from(recipe)?;
+        let data = self
+            .create_one::<Recipe>(Tables::Recipes.value(), doc, None)
+            .await?;
+
+        Ok(data)
     }
 
-    pub fn update_recipe(&self, _id: &ObjectId, recipe: &RecipeRequest) -> bool {
+    pub async fn update_recipe(
+        &self,
+        _id: &ObjectId,
+        recipe: &RecipeRequest,
+    ) -> MongoDBResult<bool> {
         let id = _id.clone();
-        match MongoDB::doc_from(recipe) {
-            Some(udoc) => {
-                let doc = udoc.clone();
-                self.update_one::<Recipe>(Tables::Recipes.value(), doc! { "_id": id }, doc, None)
-            }
-            None => false,
-        }
+        let doc = MongoDB::doc_from(recipe)?;
+        let data = self
+            .update_one::<Recipe>(Tables::Recipes.value(), doc! { "_id": id }, doc, None)
+            .await?;
+
+        Ok(data)
     }
 
-    pub fn delete_recipe(&self, _id: &ObjectId) -> bool {
-        self.delete_one(Tables::Recipes.value(), doc! { "_id": _id.clone() }, None)
+    pub async fn delete_recipe(&self, _id: &ObjectId) -> MongoDBResult<bool> {
+        let data = self
+            .delete_one(Tables::Recipes.value(), doc! { "_id": _id.clone() }, None)
+            .await?;
+
+        Ok(data)
     }
 }

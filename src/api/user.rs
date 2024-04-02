@@ -5,7 +5,7 @@ use crate::{
     model::users::{LoginRequest, User, UserResponse},
 };
 
-use super::response::APIResponse;
+use super::response::{ok, APIResponse, ApiResult};
 
 pub fn user_routes() -> Vec<rocket::Route> {
     routes![get_users, login_user, register_user]
@@ -30,8 +30,8 @@ async fn login_user(
 }
 
 #[post("/register", format = "application/json", data = "<info>")]
-async fn register_user(info: Json<User>, db: &State<MongoDB>) -> Json<APIResponse<String>> {
-    return Json(APIResponse::new_success_nm(
-        db.register_user(&info.0).map(|x| x.to_hex()),
-    ));
+async fn register_user(info: Json<User>, db: &State<MongoDB>) -> ApiResult<String> {
+    let data = db.register_user(&info.0).await?;
+
+    ok(data.to_hex())
 }
