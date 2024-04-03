@@ -1,4 +1,3 @@
-use mongodb::bson::oid::ObjectId;
 use rocket::{serde::json::Json, State};
 
 use crate::{
@@ -7,7 +6,7 @@ use crate::{
 };
 
 use super::{
-    response::{ok, APIResponse, ApiResult},
+    response::{ok, ApiResult},
     utils::parse_object_id,
 };
 
@@ -22,14 +21,14 @@ pub fn prep_list_routes() -> Vec<rocket::Route> {
 }
 
 #[get("/")]
-async fn get_all_prep_list(db: &State<MongoDB>) -> Json<APIResponse<Vec<PrepListResponse>>> {
-    Json(APIResponse::new_success_nm(db.get_all_prep_list()))
+async fn get_all_prep_list(db: &State<MongoDB>) -> ApiResult<Vec<PrepListResponse>> {
+    return ok(db.get_all_prep_list().await?);
 }
 
 #[get("/<iid>")]
-async fn get_prep_list(iid: &str, db: &State<MongoDB>) -> Json<APIResponse<PrepListResponse>> {
-    let id = ObjectId::parse_str(iid).unwrap();
-    Json(APIResponse::new_success_nm(db.get_prep_list(&id)))
+async fn get_prep_list(iid: &str, db: &State<MongoDB>) -> ApiResult<PrepListResponse> {
+    let id = parse_object_id(iid)?;
+    ok(db.get_prep_list(&id).await?)
 }
 
 #[post("/", format = "application/json", data = "<info>")]

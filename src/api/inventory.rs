@@ -1,12 +1,14 @@
-use mongodb::bson::oid::ObjectId;
-use rocket::{http::Status, serde::json::Json, State};
+use rocket::{serde::json::Json, State};
 
 use crate::{
     db::mongodb::MongoDB,
     model::inventory::{InventoryRequest, InventoryResponse},
 };
 
-use super::response::{ok, APIResponse, ApiResult};
+use super::{
+    response::{ok, ApiResult},
+    utils::parse_object_id,
+};
 
 pub fn inventory_routes() -> Vec<rocket::Route> {
     routes![
@@ -18,19 +20,15 @@ pub fn inventory_routes() -> Vec<rocket::Route> {
 }
 
 #[get("/")]
-async fn get_all_inventory(db: &State<MongoDB>) -> Json<APIResponse<Vec<InventoryResponse>>> {
-    Json(APIResponse::new_success_nm(db.get_all_inventory()))
+async fn get_all_inventory(db: &State<MongoDB>) -> ApiResult<Vec<InventoryResponse>> {
+    ok(db.get_all_inventory().await?)
 }
 
 #[get("/<iid>")]
-async fn get_inventory(iid: &str, db: &State<MongoDB>) -> Json<APIResponse<InventoryResponse>> {
-    match ObjectId::parse_str(iid) {
-        Ok(id) => Json(APIResponse::new_success_nm(db.get_inventory(&id))),
-        Err(ex) => Json(APIResponse::new_error(
-            Status::BadRequest,
-            ex.to_string().as_str(),
-        )),
-    }
+async fn get_inventory(iid: &str, db: &State<MongoDB>) -> ApiResult<InventoryResponse> {
+    let id = parse_object_id(iid)?;
+
+    ok(db.get_inventory(&id).await?)
 }
 
 #[post("/", format = "application/json", data = "<info>")]

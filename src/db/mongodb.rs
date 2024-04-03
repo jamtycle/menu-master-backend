@@ -124,6 +124,24 @@ impl MongoDB {
         }
     }
 
+    pub async fn find_one_res<T>(
+        &self,
+        _collection_name: &str,
+        _filter: Document,
+        _options: Option<FindOneOptions>,
+    ) -> Result<T, MongoDBError>
+    where
+        T: for<'a> Deserialize<'a>,
+    {
+        let col = self.get_collection_res(_collection_name)?;
+
+        let data = col.find_one(_filter, _options)?;
+        let doc = data.unwrap_or(doc! {});
+        let res = mongodb::bson::from_document::<T>(doc).map_err(Into::into);
+
+        return res;
+    }
+
     pub async fn create_one<T>(
         &self,
         _collection_name: &str,

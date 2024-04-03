@@ -8,17 +8,24 @@ use super::{
 };
 
 impl MongoDB {
-    pub fn get_all_menus(&self) -> Option<Vec<Menu>> {
-        self.find(Tables::Menus.value(), doc! {}, None)
+    pub async fn get_all_menus(&self) -> MongoDBResult<Vec<Menu>> {
+        let data = self
+            .find_res::<Menu>(Tables::Menus.value(), doc! {}, None)
+            .await?;
+
+        Ok(data.into_iter().map(|x| x.into()).collect())
     }
 
-    pub fn get_menu(&self, rid: &ObjectId) -> Option<Vec<MenuResponse>> {
-        self.find::<Menu>(
-            Tables::Menus.value(),
-            doc! { "restaurant_id": rid.clone() },
-            None,
-        )
-        .map(|m| m.into_iter().map(|x| x.into()).collect())
+    pub async fn get_menu(&self, rid: &ObjectId) -> MongoDBResult<Vec<MenuResponse>> {
+        let data = self
+            .find_res::<Menu>(
+                Tables::Menus.value(),
+                doc! { "restaurant_id": rid.clone() },
+                None,
+            )
+            .await?;
+
+        Ok(data.into_iter().map(|x| x.into()).collect())
     }
 
     pub async fn create_menu(&self, menu: &MenuRequest) -> MongoDBResult<ObjectId> {
@@ -44,7 +51,7 @@ impl MongoDB {
         let data = self
             .delete_one(Tables::Menus.value(), doc! { "_id": _id.clone() }, None)
             .await?;
-        
+
         Ok(data)
     }
 }

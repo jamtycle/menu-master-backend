@@ -8,15 +8,20 @@ use crate::{
 use super::{mongo_tables::Tables, mongodb::MongoDBResult};
 
 impl MongoDB {
-    pub fn get_all_recipes(&self) -> Option<Vec<RecipeResponse>> {
-        let recipes = self.find::<Recipe>(Tables::Recipes.value(), doc! {}, None);
-        return recipes.map(|x| x.into_iter().map(|r| r.into()).collect());
+    pub async fn get_all_recipes(&self) -> MongoDBResult<Vec<RecipeResponse>> {
+        let recipes = self
+            .find_res::<Recipe>(Tables::Recipes.value(), doc! {}, None)
+            .await?;
+
+        Ok(recipes.into_iter().map(|x| x.into()).collect())
     }
 
-    pub fn get_recipe(&self, rid: &ObjectId) -> Option<RecipeResponse> {
-        let recipe =
-            self.find_one::<Recipe>(Tables::Recipes.value(), doc! { "_id": rid.clone() }, None);
-        return recipe.map(|x| x.into());
+    pub async fn get_recipe(&self, rid: &ObjectId) -> MongoDBResult<RecipeResponse> {
+        let recipe = self
+            .find_one_res::<Recipe>(Tables::Recipes.value(), doc! { "_id": rid.clone() }, None)
+            .await?;
+
+        Ok(recipe.into())
     }
 
     pub async fn create_recipe(&self, recipe: &RecipeRequest) -> MongoDBResult<ObjectId> {

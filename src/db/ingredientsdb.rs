@@ -25,13 +25,20 @@ impl MongoDB {
         Ok(info.into_iter().map(|x| x.into()).collect())
     }
 
-    pub fn get_ingredient(&self, _id: &ObjectId, _rid: &ObjectId) -> Option<IngredientResponse> {
-        self.find_one::<Ingredient>(
-            Tables::Ingredients.value(),
-            doc! { "_id": _id.clone(), "restaurant_id": _rid.clone() },
-            None,
-        )
-        .map(|d| d.into())
+    pub async fn get_ingredient(
+        &self,
+        _id: &ObjectId,
+        _rid: &ObjectId,
+    ) -> MongoDBResult<IngredientResponse> {
+        let info = self
+            .find_one_res::<Ingredient>(
+                Tables::Ingredients.value(),
+                doc! { "_id": _id.clone(), "restaurant_id": _rid.clone() },
+                None,
+            )
+            .await?;
+
+        Ok(info.into())
     }
 
     pub async fn create_ingredient(

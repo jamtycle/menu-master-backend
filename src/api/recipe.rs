@@ -1,4 +1,3 @@
-use mongodb::bson::oid::ObjectId;
 use rocket::{serde::json::Json, State};
 
 use crate::{
@@ -7,7 +6,7 @@ use crate::{
 };
 
 use super::{
-    response::{ok, APIResponse, ApiResult},
+    response::{ok, ApiResult},
     utils::parse_object_id,
 };
 
@@ -22,14 +21,16 @@ pub fn recipe_routes() -> Vec<rocket::Route> {
 }
 
 #[get("/")]
-async fn get_all_recipes(db: &State<MongoDB>) -> Json<APIResponse<Vec<RecipeResponse>>> {
-    Json(APIResponse::new_success_nm(db.get_all_recipes()))
+async fn get_all_recipes(db: &State<MongoDB>) -> ApiResult<Vec<RecipeResponse>> {
+    ok(db.get_all_recipes().await?)
+    // Json(APIResponse::new_success_nm(db.get_all_recipes()))
 }
 
 #[get("/<iid>")]
-async fn get_recipe(iid: &str, db: &State<MongoDB>) -> Json<APIResponse<RecipeResponse>> {
-    let id = ObjectId::parse_str(iid).unwrap();
-    Json(APIResponse::new_success_nm(db.get_recipe(&id)))
+async fn get_recipe(iid: &str, db: &State<MongoDB>) -> ApiResult<RecipeResponse> {
+    let id = parse_object_id(iid)?;
+    // Json(APIResponse::new_success_nm(db.get_recipe(&id)))
+    ok(db.get_recipe(&id).await?)
 }
 
 #[post("/", format = "application/json", data = "<info>")]

@@ -11,18 +11,27 @@ use crate::{
 use super::{mongo_tables::Tables, mongodb::MongoDBResult};
 
 impl MongoDB {
-    pub fn get_all_inventory(&self) -> Option<Vec<InventoryResponse>> {
-        self.find::<Inventory>(Tables::Inventory.value(), doc! {}, None)
-            .map(|inventory| inventory.into_iter().map(|inv| inv.into()).collect())
+    pub async fn get_all_inventory(&self) -> MongoDBResult<Vec<InventoryResponse>> {
+        let data = self
+            .find_res::<Inventory>(Tables::Inventory.value(), doc! {}, None)
+            .await?;
+
+        Ok(data.into_iter().map(|x| x.into()).collect())
     }
 
-    pub fn get_inventory(&self, _ingredient_id: &ObjectId) -> Option<InventoryResponse> {
-        self.find_one::<Inventory>(
-            Tables::Inventory.value(),
-            doc! { "ingredient_id": _ingredient_id.clone() },
-            None,
-        )
-        .map(|x| x.into())
+    pub async fn get_inventory(
+        &self,
+        _ingredient_id: &ObjectId,
+    ) -> MongoDBResult<InventoryResponse> {
+        let data = self
+            .find_one_res::<Inventory>(
+                Tables::Inventory.value(),
+                doc! { "ingredient_id": _ingredient_id.clone() },
+                None,
+            )
+            .await?;
+
+        Ok(data.into())
     }
 
     pub async fn create_inventory(&self, _inventory: &InventoryRequest) -> MongoDBResult<ObjectId> {

@@ -7,6 +7,7 @@ pub struct RecipeIngredient {
     ingredient_id: ObjectId,
     measure_unit: String,
     quantity: f64,
+    product_yield: f64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -15,6 +16,7 @@ pub struct RecipeIngredientResponse {
     ingredient_id: String,
     measure_unit: String,
     quantity: f64,
+    product_yield: f64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -72,6 +74,7 @@ impl Into<RecipeResponse> for Recipe {
                     ingredient_id: x.ingredient_id.to_hex(),
                     measure_unit: x.measure_unit,
                     quantity: x.quantity,
+                    product_yield: x.product_yield,
                 })
                 .collect(),
             prep_time_min: self.prep_time_min,

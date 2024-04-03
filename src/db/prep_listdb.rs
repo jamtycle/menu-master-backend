@@ -8,18 +8,24 @@ use crate::{
 use super::{mongo_tables::Tables, mongodb::MongoDBResult};
 
 impl MongoDB {
-    pub fn get_all_prep_list(&self) -> Option<Vec<PrepListResponse>> {
-        self.find::<PrepList>(Tables::PrepLists.value(), doc! {}, None)
-            .map(|p| p.into_iter().map(|x| x.into()).collect())
+    pub async fn get_all_prep_list(&self) -> MongoDBResult<Vec<PrepListResponse>> {
+        let data = self
+            .find_res::<PrepList>(Tables::PrepLists.value(), doc! {}, None)
+            .await?;
+
+        Ok(data.into_iter().map(|x| x.into()).collect())
     }
 
-    pub fn get_prep_list(&self, _pid: &ObjectId) -> Option<PrepListResponse> {
-        self.find_one::<PrepList>(
-            Tables::PrepLists.value(),
-            doc! { "_id": _pid.clone() },
-            None,
-        )
-        .map(|x| x.into())
+    pub async fn get_prep_list(&self, _pid: &ObjectId) -> MongoDBResult<PrepListResponse> {
+        let data = self
+            .find_one_res::<PrepList>(
+                Tables::PrepLists.value(),
+                doc! { "_id": _pid.clone() },
+                None,
+            )
+            .await?;
+
+        Ok(data.into())
     }
 
     pub async fn create_prep_list(&self, _prep_list: &PrepListRequest) -> MongoDBResult<ObjectId> {

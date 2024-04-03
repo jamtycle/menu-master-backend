@@ -1,7 +1,4 @@
-use std::str::FromStr;
-
-use mongodb::bson::oid::ObjectId;
-use rocket::{http::Status, serde::json::Json, State};
+use rocket::{serde::json::Json, State};
 
 use crate::{
     api::utils::parse_object_id,
@@ -9,7 +6,7 @@ use crate::{
     model::ingredients::{IngredientRequest, IngredientResponse},
 };
 
-use super::response::{ok, APIResponse, ApiResult};
+use super::response::{ok, ApiResult};
 
 pub fn ingredient_routes() -> Vec<rocket::Route> {
     routes![
@@ -34,16 +31,12 @@ async fn get_ingredint_by_id(
     id: &str,
     rid: &str,
     db: &State<MongoDB>,
-) -> Json<APIResponse<IngredientResponse>> {
-    let ingredient_id = ObjectId::from_str(id);
-    let restaurant_id = ObjectId::from_str(rid);
-    if ingredient_id.is_err() || restaurant_id.is_err() {
-        return Json(APIResponse::new_error(Status::BadRequest, "bad id format"));
-    }
-    Json(APIResponse::new_success_nm(db.get_ingredient(
-        &ingredient_id.unwrap(),
-        &restaurant_id.unwrap(),
-    )))
+) -> ApiResult<IngredientResponse> {
+    let ingredient_id = parse_object_id(id)?;
+    let restaurant_id = parse_object_id(rid)?;
+    let data = db.get_ingredient(&ingredient_id, &restaurant_id).await?;
+
+    ok(data)
 }
 
 #[post("/", format = "application/json", data = "<product>")]
